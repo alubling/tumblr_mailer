@@ -1,10 +1,35 @@
 var fs = require('fs');
-// var ejs = require('ejs');
+var ejs = require('ejs');
+// var tumblr = require('./tumblr.js');
 // var querystring = require('querystring');
 // var es = require('./event-stream');
 // var Transform = require('stream').Transform,
 //     csv = require("./csv-stream/csv-streamify"),
 //     JSONStream = require('./JSONStream');
+
+var mandrill = require('mandrill-api/mandrill');
+var mandrill_client = new mandrill.Mandrill('sB4GF_d8hL7Zr8N4JpB51w');
+
+
+// Authenticate via OAuth - Tumblr authentication information
+var tumblr = require('tumblr.js');
+var client = tumblr.createClient({
+  consumer_key: 'kZrDpifYrwBFaveVNLFq5Uv5WINMo8HHFbNcYySJi2ZqS1IMBB',
+  consumer_secret: '27penpOOkP98OoCGObzIUDR4k0YYmCZWpy9Q9rNNeqyzvUVLl5',
+  token: 'obN2OwngSVdE1lbM9TdBsU1SoMYmUfHi2Ql3jfU10vu5X3nSca',
+  token_secret: '56fBSj1Tx4NjoSPNvzSRPMc8JGMuPVFbm0JMYV59s5pPrfSsmG'
+});
+
+// Make the request
+client.userInfo(function (err, data) {
+    // ...
+});
+
+// Grab the posts from my tumblr blog
+client.posts('pragmaticbear.tumblr.com', function(err, blog){
+  //console.log(blog);
+});
+
 
 // read the csv file and put it into a string
 var csvFile = fs.readFileSync("friend_list.csv", "utf8");
@@ -36,7 +61,7 @@ var fileContents = fs.readFileSync('email_template.html', {encoding: "utf8"});
 //     // In case of error
 //     process.stdout.on("error", process.exit);
 
-    function csvParse(csvFile) {
+function csvParse(csvFile) {
       // var query = querystring.parse(csvFile.toString());
       // return query;
 
@@ -115,29 +140,98 @@ var fileContents = fs.readFileSync('email_template.html', {encoding: "utf8"});
 
 
 
-    };
+};
 
-    var csv_list = csvParse(csvFile);
-    // console.log(csv_list);
+var csv_list = csvParse(csvFile);
+// console.log(csv_list);
 
 
 
-// for each of the people in the list, print out an email template with the right values filled in
-csv_list.forEach(function(currentVal) {
+client.posts('pragmaticbear.tumblr.com', function(err, blog){
+  // console.log(blog);
 
-  // first get the FIRST_NAME
-  var firstName = currentVal["firstName"];
+// find the latest posts and create an array to hold them (but are these a property of an object)
+var latestPosts = [];
 
-  // then get the NUM_MONTHS_SINCE_CONTACT
-  var numMonths = currentVal["numMonthsSinceContact"];
 
-  // make a copy of the fileContents since they can be used again
-  var fileContentsInstance = fileContents;
+// find the posts written in the last 7 days. client.posts is an array of objects, so client.posts[].
+// loop through the array holding the blog posts - they contain blog objects
+for (var i = 0; i < blog.posts.length; i++) {
 
-  // Replace both values in the fileContents
-  fileContentsInstance = fileContentsInstance.replace("FIRST_NAME", firstName);
-  fileContentsInstance = fileContentsInstance.replace("NUM_MONTHS_SINCE_CONTACT", numMonths);
+//  console.log(blog.posts.length);
+//  console.log(blog.posts[i]["date"]);
 
-  console.log(fileContentsInstance);
+  // create a new date object
+  var currentDate = new Date();
+  // set a new date in the date format
+  var postDate = new Date(blog.posts[i]["date"]);
+
+  // for each one, if it was written in the last 7 days, add it to the latestPosts array
+  if ( blog.posts[i]["state"] === 'published' && (Date.parse(currentDate) - 604800000) < Date.parse(blog.posts[i]["date"])) { // blog.posts[i]["state"] === 'published' &&
+    // console.log("something pushed" + i + " time");
+    latestPosts.push(blog.posts[i]);
+  }
+}
+
+//console.log(latestPosts[0]);
+
+    // for each of the people in the list, print out an email template with the right values filled in
+    csv_list.forEach(function(currentVal) {
+
+      // first get the FIRST_NAME
+      //var firstName = currentVal["firstName"];
+
+      // then get the NUM_MONTHS_SINCE_CONTACT
+      //var numMonths = currentVal["numMonthsSinceContact"];
+
+      // make a copy of the fileContents since they can be used again
+      var fileContentsInstance = fileContents;
+
+      // Replace both values in the fileContents
+      // fileContentsInstance = fileContentsInstance.replace("FIRST_NAME", firstName);
+      // fileContentsInstance = fileContentsInstance.replace("NUM_MONTHS_SINCE_CONTACT", numMonths);
+
+      //console.log(fileContentsInstance);
+      //console.log(latestPosts);
+
+      // Create our ejs template for each person in the list
+      var ejsTemplate = ejs.render(fileContentsInstance, {firstName: currentVal["firstName"], numMonthsSinceContact: currentVal["numMonthsSinceContact"], latestPosts: latestPosts});
+
+      // Send the emails!
+      sendEmail(currentVal["firstName"], currentVal["emailAddress"], "Amit", "alubling@gmail.com", "Check this out!", ejsTemplate );
+
+    });
 
 });
+
+// send email function to actually send the emails
+function sendEmail(to_name, to_email, from_name, from_email, subject, message_html){
+    var message = {
+        "html": message_html,
+        "subject": subject,
+        "from_email": from_email,
+        "from_name": from_name,
+        "to": [{
+                "email": to_email,
+                "name": to_name
+            }],
+        "important": false,
+        "track_opens": true,
+        "auto_html": false,
+        "preserve_recipients": true,
+        "merge": false,
+        "tags": [
+            "Fullstack_Tumblrmailer_Workshop"
+        ]
+    };
+    var async = false;
+    var ip_pool = "Main Pool";
+    mandrill_client.messages.send({"message": message, "async": async, "ip_pool": ip_pool}, function(result) {
+        // console.log(message);
+        // console.log(result);
+    }, function(e) {
+        // Mandrill returns the error as an object with name and message keys
+        console.log('A mandrill error occurred: ' + e.name + ' - ' + e.message);
+        // A mandrill error occurred: Unknown_Subaccount - No subaccount exists with the id 'customer-123'
+    });
+ }

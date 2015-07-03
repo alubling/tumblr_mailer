@@ -1,5 +1,6 @@
 firstName,lastName,numMonthsSinceContact,emailAddress
-Scott,D'Alessandro,0,scott@fullstackacademy.com
-Rachel,Dubroff,0,racheldubroff@gmail.com
-Amit,Lubling,0,a_lubling@yahoo.com
-Amit,Lubling,0,amit@prehype.com
+Amit,Lubling,1,alubling@gmail.com
+Rachel,Dubroff,2,racheldubroff@gmail.com
+Amit,Lubling,3,a_lubling@yahoo.com
+Amit,Lubling,4,amit@prehype.com
+Scott,D'Alessandro,2,scott@fullstackacademy.com
