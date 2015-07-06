@@ -8,16 +8,16 @@ var ejs = require('ejs');
 //     JSONStream = require('./JSONStream');
 
 var mandrill = require('mandrill-api/mandrill');
-var mandrill_client = new mandrill.Mandrill('sB4GF_d8hL7Zr8N4JpB51w');
+var mandrill_client = new mandrill.Mandrill('api key goes here');
 
 
 // Authenticate via OAuth - Tumblr authentication information
 var tumblr = require('tumblr.js');
 var client = tumblr.createClient({
-  consumer_key: 'kZrDpifYrwBFaveVNLFq5Uv5WINMo8HHFbNcYySJi2ZqS1IMBB',
-  consumer_secret: '27penpOOkP98OoCGObzIUDR4k0YYmCZWpy9Q9rNNeqyzvUVLl5',
-  token: 'obN2OwngSVdE1lbM9TdBsU1SoMYmUfHi2Ql3jfU10vu5X3nSca',
-  token_secret: '56fBSj1Tx4NjoSPNvzSRPMc8JGMuPVFbm0JMYV59s5pPrfSsmG'
+  consumer_key: 'api key goes here',
+  consumer_secret: 'secret key goes here',
+  token: 'token goes here',
+  token_secret: 'secret token goes here'
 });
 
 // Make the request
